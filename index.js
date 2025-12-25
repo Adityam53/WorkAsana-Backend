@@ -86,7 +86,7 @@ app.post("/auth/login", async (req, res) => {
     const token = await loginUser(email, password);
 
     if (!token) {
-      res.status(401).json({ error: "Invalid Credentials" });
+      return res.status(401).json({ error: "Invalid Credentials" });
     }
 
     res.status(200).json({ token });
@@ -147,7 +147,7 @@ const createTask = async (newTask) => {
   }
 };
 
-app.post("/tasks", async (req, res) => {
+app.post("/tasks", authenticateToken, async (req, res) => {
   try {
     const savedTask = await createTask(req.body);
     if (!savedTask)
@@ -166,7 +166,7 @@ const readAllTasks = async (filters = {}) => {
 
     if (filters.team) query.team = filters.team;
     if (filters.owner) query.owners = { $in: filters.owner.split(",") };
-    if (filters.Project) query.Project = filters.Project;
+    if (filters.project) query.project = filters.project;
     if (filters.status) query.status = filters.status;
     if (filters.tags) query.tags = { $in: filters.tags.split(",") };
 
@@ -213,9 +213,9 @@ const updateTask = async (taskId, updatedData) => {
 
 app.put("/tasks/:id", async (req, res) => {
   try {
-    const updatedTask = await updateTask(req.params.id, req.params.body);
+    const updatedTask = await updateTask(req.params.id, req.body);
 
-    if (!updateTask) {
+    if (!updatedTask) {
       return res.status(404).json({ error: "Task not found" });
     }
 
@@ -229,7 +229,7 @@ app.put("/tasks/:id", async (req, res) => {
 const deleteTask = async (taskId) => {
   try {
     const deletedTask = await Task.findByIdAndDelete(taskId);
-    return deleteTask;
+    return deletedTask;
   } catch (error) {
     throw error;
   }
@@ -398,6 +398,106 @@ app.get("/tags", async (req, res) => {
   } catch (error) {
     console.error("Error in fetching tags.");
     res.status(500).json({ error: "Failed to fetch tags" });
+  }
+});
+
+const readCompletedTasksLastWeek = async () => {
+  try {
+    const sevenDayAgo = new Date();
+    sevenDayAgo.setDate(sevenDayAgo.getDate() - 7);
+
+    const tasks = await Task.find({
+      status: "Completed",
+      updatedAt: { $gte: sevenDayAgo },
+    });
+
+    return tasks;
+  } catch (error) {
+    throw error;
+  }
+};
+
+app.get("/report/last-week", async (req, res) => {
+  try {
+    const tasks = await readCompletedTasksLastWeek();
+    res.status(200).json({ count: tasks.length, tasks });
+  } catch (error) {
+    console.error("Error generating last week report", error);
+    res.status(500).json({ error: "Failed to generate report." });
+  }
+});
+
+const calculatePendingWorkDays = async () => {
+  try {
+    const pendingTasks = await Task.find({
+      status: { $ne: "Completed" },
+    });
+
+    const totalPendingDays = pendingTasks.reduce(
+      (sum, task) => sum + (task.timeToComplete || 0),
+      0
+    );
+
+    return {
+      totalPendingDays,
+      totalTasks: pendingTasks.length,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+app.get("/report/pending", async (req, res) => {
+  try {
+    const report = await calculatePendingWorkDays();
+    res.status(200).json(report);
+  } catch (error) {
+    console.error("Error generating pending report", error);
+    res.status(500).json({ error: "Failed to generate report" });
+  }
+});
+
+const getClosedTasksReport = async (groupBy) => {
+  try {
+    const completedTasks = await Task.find({ status: "Completed" });
+
+    const report = completedTasks.reduce((acc, task) => {
+      let keys = [];
+
+      if (groupBy === "team") keys = [task.team];
+      if (groupBy === "project") keys = [task.project];
+      if (groupBy === "owner") keys = task.owners || [];
+
+      keys.forEach((key) => {
+        if (!key) return;
+        acc[key] = (acc[key] || 0) + 1;
+      });
+
+      return acc;
+    }, {});
+
+    return report;
+  } catch (error) {
+    throw error;
+  }
+};
+
+app.get("/report/closed-tasks", async (req, res) => {
+  try {
+    const { groupBy } = req.query;
+
+    if (!["team", "owner", "project"].includes(groupBy)) {
+      return res.status(400).json({
+        error: "groupBy must be team, owner, or project",
+      });
+    }
+
+    const report = await getClosedTasksReport(groupBy);
+
+    res.status(200).json(report);
+  } catch (error) {
+    console.error("Error generating closed tasks report", error);
+    res.status(500).json({ error: "Failed to generate report" });
   }
 });
 
