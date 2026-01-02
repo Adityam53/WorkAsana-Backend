@@ -343,9 +343,7 @@ app.get("/projects", async (req, res) => {
       return res.status(404).json({ error: "Projects not found." });
     }
 
-    res
-      .status(200)
-      .json({ message: "Projects fetched successfully", projects });
+    res.status(200).json(projects);
   } catch (error) {
     console.error("Error in fetching projects");
     res.status(500).json({ error: "Failed to fetch projects." });
