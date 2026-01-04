@@ -20,9 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-initializeDatabase().catch((err) => {
-  console.error("MongoDB init failed", err);
-});
+initializeDatabase();
 
 const JWT_Secret = process.env.JWT_Secret;
 
@@ -345,7 +343,9 @@ app.get("/projects", async (req, res) => {
       return res.status(404).json({ error: "Projects not found." });
     }
 
-    res.status(200).json(projects);
+    res
+      .status(200)
+      .json({ message: "Projects fetched successfully", projects });
   } catch (error) {
     console.error("Error in fetching projects");
     res.status(500).json({ error: "Failed to fetch projects." });
@@ -502,6 +502,6 @@ app.get("/report/closed-tasks", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log("Server is running on port", PORT);
-// });
+app.listen(PORT, () => {
+  console.log("Server is running on port", PORT);
+});
