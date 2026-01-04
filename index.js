@@ -20,7 +20,15 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-initializeDatabase();
+app.use(async (req, res, next) => {
+  try {
+    await initializeDatabase();
+    next();
+  } catch (err) {
+    console.error("DB connection failed", err);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 const JWT_Secret = process.env.JWT_Secret;
 
@@ -500,6 +508,6 @@ app.get("/report/closed-tasks", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server is running on port", PORT);
-});
+// app.listen(PORT, () => {
+//   console.log("Server is running on port", PORT);
+// });

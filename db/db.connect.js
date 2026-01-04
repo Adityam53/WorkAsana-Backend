@@ -1,14 +1,19 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+let isConnected = false;
 const dbUri = process.env.MONGODB;
 const initializeDatabase = async () => {
-  await mongoose
-    .connect(dbUri)
-    .then(() => console.log("Database Connected successfully"))
-    .catch((error) =>
-      console.log("An error occurred while connecting to Database", error)
-    );
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect(dbUri);
+    isConnected = true;
+    console.log("MongoDB connected");
+  } catch (error) {
+    console.error("MongoDB connection error", err);
+    throw err;
+  }
 };
 
 module.exports = { initializeDatabase };
