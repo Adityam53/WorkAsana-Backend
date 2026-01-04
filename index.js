@@ -20,14 +20,8 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-app.use(async (req, res, next) => {
-  try {
-    await initializeDatabase();
-    next();
-  } catch (err) {
-    console.error("DB connection failed", err);
-    res.status(500).json({ error: "Database connection failed" });
-  }
+initializeDatabase().catch((err) => {
+  console.error("MongoDB init failed", err);
 });
 
 const JWT_Secret = process.env.JWT_Secret;
