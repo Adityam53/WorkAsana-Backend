@@ -170,7 +170,11 @@ const readAllTasks = async (filters = {}) => {
     if (filters.status) query.status = filters.status;
     if (filters.tags) query.tags = { $in: filters.tags.split(",") };
 
-    const tasks = await Task.find(query);
+    const tasks = await Task.find(query)([
+      { path: "project", select: "name description" },
+      { path: "team", select: "name description" },
+      { path: "owners", select: "name email" },
+    ]);
     return tasks;
   } catch (error) {
     throw error;
