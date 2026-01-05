@@ -176,7 +176,7 @@ app.post("/tasks", authenticateToken, async (req, res) => {
     if (!savedTask)
       return res.status(400).json({ error: "Failed to create Task" });
 
-    res.status(201).json({ message: "Task created successfully", savedTask });
+    res.status(201).json(savedTask);
   } catch (error) {
     console.error("Error creating task", error);
     res.status(500).json({ error: "Internal Server error." });
