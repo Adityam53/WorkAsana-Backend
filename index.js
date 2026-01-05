@@ -176,7 +176,13 @@ app.post("/tasks", authenticateToken, async (req, res) => {
     if (!savedTask)
       return res.status(400).json({ error: "Failed to create Task" });
 
-    res.status(201).json(savedTask);
+    const populatedTask = await Task.findById(savedTask._id).populate([
+      { path: "project", select: "name description" },
+      { path: "team", select: "name description" },
+      { path: "owners", select: "name email" },
+    ]);
+
+    res.status(201).json(populatedTask);
   } catch (error) {
     console.error("Error creating task", error);
     res.status(500).json({ error: "Internal Server error." });
