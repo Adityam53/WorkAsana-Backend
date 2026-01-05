@@ -137,6 +137,29 @@ app.get("/auth/me", authenticateToken, async (req, res) => {
   }
 });
 
+const readAllUsers = async () => {
+  try {
+    const users = await User.find();
+    return users;
+  } catch (error) {
+    throw error;
+  }
+};
+
+app.get("/users", async (req, res) => {
+  try {
+    const users = await readAllUsers();
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: "No users found" });
+    }
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error in fetching users", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
 const createTask = async (newTask) => {
   try {
     const task = new Task(newTask);
