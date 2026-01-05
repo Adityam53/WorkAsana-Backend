@@ -396,7 +396,7 @@ app.get("/tags", async (req, res) => {
       return res.status(404).json({ error: "Tags Not found." });
     }
 
-    res.status(200).json({ tags });
+    res.status(200).json(tags);
   } catch (error) {
     console.error("Error in fetching tags.");
     res.status(500).json({ error: "Failed to fetch tags" });
