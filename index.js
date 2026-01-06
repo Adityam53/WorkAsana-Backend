@@ -122,7 +122,7 @@ const readUserById = async (userId) => {
   }
 };
 
-app.get("/auth/me", authenticateToken, async (req, res) => {
+app.get("/auth/me", async (req, res) => {
   try {
     const user = await readUserById(req.user.userId);
 
