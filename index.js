@@ -22,7 +22,7 @@ app.use(cors(corsOptions));
 
 initializeDatabase();
 
-const JWT_Secret = process.env.JWT_Secret;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const createUser = async (newUser) => {
   try {
@@ -70,7 +70,7 @@ const loginUser = async (email, password) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) return null;
 
-    const token = jwt.sign({ userId: user._id }, JWT_Secret, {
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
       expiresIn: "1d",
     });
 
@@ -105,7 +105,7 @@ const authenticateToken = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decodedToken = jwt.verify(token, JWT_Secret);
+    const decodedToken = jwt.verify(token, JWT_SECRET);
     req.user = decodedToken;
     console.log("Decoded token:", req.user);
     next();
@@ -151,16 +151,13 @@ app.get("/users", authenticateToken, async (req, res) => {
   try {
     const users = await readAllUsers();
 
-    if (users.length === 0) {
-      return res.status(404).json({ error: "No users found" });
-    }
-
     res.status(200).json(users);
   } catch (error) {
     console.error("Error in fetching users", error);
     res.status(500).json({ error: "Internal server error." });
   }
 });
+
 const createTask = async (newTask) => {
   try {
     const task = new Task(newTask);
@@ -222,10 +219,6 @@ app.get("/tasks", authenticateToken, async (req, res) => {
     };
 
     const tasks = await readAllTasks(filters);
-
-    if (tasks.length === 0) {
-      return res.status(404).json({ error: "No tasks found." });
-    }
 
     res.status(200).json(tasks);
   } catch (error) {
@@ -322,10 +315,6 @@ app.get("/teams", authenticateToken, async (req, res) => {
   try {
     const teams = await readAllTeams();
 
-    if (teams.length === 0) {
-      return res.status(404).json({ error: "No teams found." });
-    }
-
     res.status(200).json(teams);
   } catch (error) {
     console.error("Error in fetching teams");
@@ -373,10 +362,6 @@ app.get("/projects", authenticateToken, async (req, res) => {
   try {
     const projects = await readAllProjects();
 
-    if (projects.length === 0) {
-      return res.status(404).json({ error: "Projects not found." });
-    }
-
     res.status(200).json(projects);
   } catch (error) {
     console.error("Error in fetching projects");
@@ -421,10 +406,6 @@ const readAllTags = async () => {
 app.get("/tags", authenticateToken, async (req, res) => {
   try {
     const tags = await readAllTags();
-
-    if (tags.length === 0) {
-      return res.status(404).json({ error: "Tags Not found." });
-    }
 
     res.status(200).json(tags);
   } catch (error) {
@@ -490,28 +471,30 @@ app.get("/report/pending", authenticateToken, async (req, res) => {
 });
 
 const getClosedTasksReport = async (groupBy) => {
-  try {
-    const completedTasks = await Task.find({ status: "Completed" });
+  const completedTasks = await Task.find({ status: "Completed" });
+  const report = {};
 
-    const report = completedTasks.reduce((acc, task) => {
-      let keys = [];
+  completedTasks.forEach((task) => {
+    let keys = [];
 
-      if (groupBy === "team") keys = [task.team];
-      if (groupBy === "project") keys = [task.project];
-      if (groupBy === "owner") keys = task.owners || [];
+    if (groupBy === "owner" && Array.isArray(task.owners)) {
+      keys = task.owners.map((id) => id.toString());
+    }
 
-      keys.forEach((key) => {
-        if (!key) return;
-        acc[key] = (acc[key] || 0) + 1;
-      });
+    if (groupBy === "team" && task.team) {
+      keys = [task.team.toString()];
+    }
 
-      return acc;
-    }, {});
+    if (groupBy === "project" && task.project) {
+      keys = [task.project.toString()];
+    }
 
-    return report;
-  } catch (error) {
-    throw error;
-  }
+    keys.forEach((k) => {
+      report[k] = (report[k] || 0) + 1;
+    });
+  });
+
+  return report;
 };
 
 app.get("/report/closed-tasks", authenticateToken, async (req, res) => {
