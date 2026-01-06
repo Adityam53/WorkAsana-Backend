@@ -147,7 +147,7 @@ const readAllUsers = async () => {
   }
 };
 
-app.get("/users", async (req, res) => {
+app.get("/users", authenticateToken, async (req, res) => {
   try {
     const users = await readAllUsers();
 
@@ -211,7 +211,7 @@ const readAllTasks = async (filters = {}) => {
   }
 };
 
-app.get("/tasks", async (req, res) => {
+app.get("/tasks", authenticateToken, async (req, res) => {
   try {
     const filters = {
       team: req.query.team,
@@ -245,7 +245,7 @@ const updateTask = async (taskId, updatedData) => {
   }
 };
 
-app.put("/tasks/:id", async (req, res) => {
+app.put("/tasks/:id", authenticateToken, async (req, res) => {
   try {
     const updatedTask = await updateTask(req.params.id, req.body);
 
@@ -269,7 +269,7 @@ const deleteTask = async (taskId) => {
   }
 };
 
-app.delete("/tasks/:id", async (req, res) => {
+app.delete("/tasks/:id", authenticateToken, async (req, res) => {
   try {
     const deletedTask = await deleteTask(req.params.id);
 
@@ -294,7 +294,7 @@ const createTeam = async (newTeam) => {
   }
 };
 
-app.post("/teams", async (req, res) => {
+app.post("/teams", authenticateToken, async (req, res) => {
   try {
     const savedTeam = await createTeam(req.body);
 
@@ -318,7 +318,7 @@ const readAllTeams = async () => {
   }
 };
 
-app.get("/teams", async (req, res) => {
+app.get("/teams", authenticateToken, async (req, res) => {
   try {
     const teams = await readAllTeams();
 
@@ -343,7 +343,7 @@ const createProject = async (newProject) => {
   }
 };
 
-app.post("/projects", async (req, res) => {
+app.post("/projects", authenticateToken, async (req, res) => {
   try {
     const savedProject = await createProject(req.body);
 
@@ -369,7 +369,7 @@ const readAllProjects = async () => {
   }
 };
 
-app.get("/projects", async (req, res) => {
+app.get("/projects", authenticateToken, async (req, res) => {
   try {
     const projects = await readAllProjects();
 
@@ -394,7 +394,7 @@ const createTag = async (newTag) => {
   }
 };
 
-app.post("/tags", async (req, res) => {
+app.post("/tags", authenticateToken, async (req, res) => {
   try {
     const savedTag = await createTag(req.body);
 
@@ -418,7 +418,7 @@ const readAllTags = async () => {
   }
 };
 
-app.get("/tags", async (req, res) => {
+app.get("/tags", authenticateToken, async (req, res) => {
   try {
     const tags = await readAllTags();
 
@@ -449,7 +449,7 @@ const readCompletedTasksLastWeek = async () => {
   }
 };
 
-app.get("/report/last-week", async (req, res) => {
+app.get("/report/last-week", authenticateToken, async (req, res) => {
   try {
     const tasks = await readCompletedTasksLastWeek();
     res.status(200).json({ count: tasks.length, tasks });
@@ -479,7 +479,7 @@ const calculatePendingWorkDays = async () => {
   }
 };
 
-app.get("/report/pending", async (req, res) => {
+app.get("/report/pending", authenticateToken, async (req, res) => {
   try {
     const report = await calculatePendingWorkDays();
     res.status(200).json(report);
@@ -514,7 +514,7 @@ const getClosedTasksReport = async (groupBy) => {
   }
 };
 
-app.get("/report/closed-tasks", async (req, res) => {
+app.get("/report/closed-tasks", authenticateToken, async (req, res) => {
   try {
     const { groupBy } = req.query;
 
