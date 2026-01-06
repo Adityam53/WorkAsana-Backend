@@ -20,13 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-(async () => {
-  try {
-    await initializeDatabase();
-  } catch (err) {
-    console.error("DB init failed", err);
-  }
-})();
+initializeDatabase();
 
 const JWT_Secret = process.env.JWT_Secret;
 
