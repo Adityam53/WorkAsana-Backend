@@ -1,14 +1,16 @@
-const { initializeDatabase } = require("./db/db.connect");
-require("dotenv").config();
-const Task = require("./models/task.models");
-const Team = require("./models/team.models");
-const Tag = require("./models/tag.models");
-const User = require("./models/user.models");
-const Project = require("./models/project.models");
-const express = require("express");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
+import "dotenv/config";
+import express from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import cors from "cors";
+
+import Task from "./models/task.models.js";
+import Team from "./models/team.models.js";
+import Tag from "./models/tag.models.js";
+import User from "./models/user.models.js";
+import Project from "./models/project.models.js";
+
+import { connectDB } from "./db/db.connect.js";
 
 const corsOptions = {
   origin: "*",
@@ -20,9 +22,12 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-initializeDatabase();
+await connectDB();
 
 const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET not defined");
+}
 
 const createUser = async (newUser) => {
   try {
