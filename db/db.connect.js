@@ -1,31 +1,14 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
+require("dotenv").config();
 
-mongoose.set("bufferCommands", false);
-const MONGODB = process.env.MONGODB;
+const dbUri = process.env.MONGODB;
+const initializeDatabase = async () => {
+  await mongoose
+    .connect(dbUri)
+    .then(() => console.log("Database Connected successfully"))
+    .catch((error) =>
+      console.log("An error occurred while connecting to Database", error)
+    );
+};
 
-if (!MONGODB) {
-  throw new Error("MONGODB_URI not defined");
-}
-
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-export async function connectDB() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB, {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 5,
-    });
-  }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
+module.exports = { initializeDatabase };

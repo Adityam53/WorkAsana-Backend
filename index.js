@@ -1,39 +1,28 @@
-import "dotenv/config";
-import express from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import cors from "cors";
-
-import Task from "./models/task.models.js";
-import Team from "./models/team.models.js";
-import Tag from "./models/tag.models.js";
-import User from "./models/user.models.js";
-import Project from "./models/project.models.js";
-
-import { connectDB } from "./db/db.connect.js";
+const { initializeDatabase } = require("./db/db.connect");
+require("dotenv").config();
+const Task = require("./models/task.models");
+const Team = require("./models/team.models");
+const Tag = require("./models/tag.models");
+const User = require("./models/user.models");
+const Project = require("./models/project.models");
+const express = require("express");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 const corsOptions = {
   origin: "*",
+  credentials: true,
+  optionSuccessStatus: 200,
 };
 
 const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error("DB connection failed", err);
-    res.status(500).json({ error: "Database connection failed" });
-  }
-});
+initializeDatabase();
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET not defined");
-}
 
 const createUser = async (newUser) => {
   try {
@@ -527,8 +516,7 @@ app.get("/report/closed-tasks", authenticateToken, async (req, res) => {
   }
 });
 
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log("Server is running on port", PORT);
-// });
-export default app;
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server is running on port", PORT);
+});
