@@ -25,59 +25,75 @@ initializeDatabase();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const createUser = async (newUser) => {
-  try {
-    const existingUser = await User.findOne({ email: newUser.email });
-    if (existingUser) {
-      return null;
-    }
+  const { name, email, password } = newUser;
 
-    const hashedPassword = await bcrypt.hash(newUser.password, 10);
-
-    const user = new User({
-      name: newUser.name,
-      email: newUser.email,
-      password: hashedPassword,
-    });
-
-    const saveUser = await user.save();
-    return saveUser;
-  } catch (error) {
-    throw error;
+  if (!name || !email || !password) {
+    const err = new Error("Name, email and password are required");
+    err.statusCode = 400;
+    throw err;
   }
+
+  if (password.length < 6) {
+    const err = new Error("Password must be at least 6 characters long");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    const err = new Error("User with this email already exists");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = new User({
+    name,
+    email,
+    password: hashedPassword,
+  });
+
+  return await user.save();
 };
 
 app.post("/auth/signup", async (req, res) => {
   try {
-    const savedUser = await createUser(req.body);
-    if (!savedUser) {
-      return res.status(400).json({ error: "Email already registered" });
-    }
-
+    await createUser(req.body);
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
     console.error("Error in signup", error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+
     res.status(500).json({ error: "Failed to register user" });
   }
 });
 
 const loginUser = async (email, password) => {
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return null;
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return null;
-
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET, {
-      expiresIn: "1d",
-    });
-
-    return token;
-  } catch (error) {
-    throw error;
+  if (!email || !password) {
+    const err = new Error("Email and password are required");
+    err.statusCode = 400;
+    throw err;
   }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    const err = new Error("Invalid email or password");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
+    const err = new Error("Invalid email or password");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  return jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
 };
 
 app.post("/auth/login", async (req, res) => {
@@ -85,13 +101,12 @@ app.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
     const token = await loginUser(email, password);
 
-    if (!token) {
-      return res.status(401).json({ error: "Invalid Credentials" });
-    }
-
     res.status(200).json({ token });
   } catch (error) {
     console.error("Error in login", error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({ error: "Login failed" });
   }
 });
@@ -115,12 +130,13 @@ const authenticateToken = (req, res, next) => {
 };
 
 const readUserById = async (userId) => {
-  try {
-    const user = await User.findById(userId).select("-password");
-    return user;
-  } catch (error) {
-    throw error;
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    const err = new Error("Invalid user id");
+    err.statusCode = 400;
+    throw err;
   }
+  const user = await User.findById(userId).select("-password");
+  return user;
 };
 
 app.get("/auth/me", authenticateToken, async (req, res) => {
@@ -134,6 +150,9 @@ app.get("/auth/me", authenticateToken, async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user details", error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({ error: "Failed to fetch user details" });
   }
 });
