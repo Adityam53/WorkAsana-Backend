@@ -6,6 +6,7 @@ const Tag = require("./models/tag.models");
 const User = require("./models/user.models");
 const Project = require("./models/project.models");
 const express = require("express");
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
@@ -20,7 +21,10 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-initializeDatabase();
+app.use(async (req, res, next) => {
+  await initializeDatabase();
+  next();
+});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
