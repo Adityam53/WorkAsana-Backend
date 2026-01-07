@@ -14,15 +14,21 @@ import { connectDB } from "./db/db.connect.js";
 
 const corsOptions = {
   origin: "*",
-  credentials: true,
-  optionSuccessStatus: 200,
 };
 
 const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-await connectDB();
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("DB connection failed", err);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -521,7 +527,8 @@ app.get("/report/closed-tasks", authenticateToken, async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server is running on port", PORT);
-});
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => {
+//   console.log("Server is running on port", PORT);
+// });
+export default app;
