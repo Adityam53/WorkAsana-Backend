@@ -269,9 +269,15 @@ app.put("/tasks/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Task not found" });
     }
 
+    const populatedTask = await Task.findById(updatedTask._id).populate([
+      { path: "project", select: "name description" },
+      { path: "team", select: "name description" },
+      { path: "owners", select: "name email" },
+    ]);
+
     res
       .status(200)
-      .json({ message: "Task updated successfully", task: updatedTask });
+      .json({ message: "Task updated successfully", task: populatedTask });
   } catch (error) {
     console.error("Error in updating task", error);
     res.status(500).json({ error: "Failed to update task" });
