@@ -269,7 +269,9 @@ app.put("/tasks/:id", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: "Task not found" });
     }
 
-    res.status(200).json({ message: "Task updated successfully", updateTask });
+    res
+      .status(200)
+      .json({ message: "Task updated successfully", task: updatedTask });
   } catch (error) {
     console.error("Error in updating task", error);
     res.status(500).json({ error: "Failed to update task" });
