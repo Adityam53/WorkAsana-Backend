@@ -7,7 +7,7 @@ const initializeDatabase = async () => {
     .connect(dbUri)
     .then(() => console.log("Database Connected successfully"))
     .catch((error) =>
-      console.log("An error occurred while connecting to Database", error)
+      console.log("An error occurred while connecting to Database", error),
     );
 };
 

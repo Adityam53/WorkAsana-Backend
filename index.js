@@ -250,6 +250,51 @@ app.get("/tasks", authenticateToken, async (req, res) => {
   }
 });
 
+const readTaskById = async (taskId) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      const err = new Error("Invalid task id");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const task = await Task.findById(taskId).populate([
+      { path: "project", select: "name description" },
+      { path: "team", select: "name description" },
+      { path: "owners", select: "name email" },
+    ]);
+
+    return task;
+  } catch (error) {
+    throw error;
+  }
+};
+
+app.get("/tasks/:id", authenticateToken, async (req, res) => {
+  try {
+    const task = await readTaskById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({
+        error: "Task not found",
+      });
+    }
+
+    res.status(200).json(task);
+  } catch (error) {
+    console.error("Error fetching task", error);
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        error: error.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to fetch task",
+    });
+  }
+});
 const updateTask = async (taskId, updatedData) => {
   try {
     const taskUpdate = await Task.findByIdAndUpdate(taskId, updatedData, {
@@ -479,7 +524,7 @@ const calculatePendingWorkDays = async () => {
 
     const totalPendingDays = pendingTasks.reduce(
       (sum, task) => sum + (task.timeToComplete || 0),
-      0
+      0,
     );
 
     return {
