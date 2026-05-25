@@ -210,7 +210,7 @@ app.post("/tasks", authenticateToken, async (req, res) => {
   }
 });
 
-const readAllTasks = async (filters = {}) => {
+const readAllTasks = async (filters = {}, page = 1, limit = 9) => {
   try {
     const query = {};
 
@@ -220,12 +220,27 @@ const readAllTasks = async (filters = {}) => {
     if (filters.status) query.status = filters.status;
     if (filters.tags) query.tags = { $in: filters.tags.split(",") };
 
-    const tasks = await Task.find(query).populate([
-      { path: "project", select: "name description" },
-      { path: "team", select: "name description" },
-      { path: "owners", select: "name email" },
+    const skip = (page - 1) * limit;
+
+    const [tasks, totalTasks] = await Promise.all([
+      Task.find(query)
+        .populate([
+          { path: "project", select: "name description" },
+          { path: "team", select: "name description" },
+          { path: "owners", select: "name email" },
+        ])
+        .skip(skip)
+        .limit(limit),
+
+      Task.countDocuments(query),
     ]);
-    return tasks;
+
+    return {
+      tasks,
+      totalTasks,
+      currentPage: page,
+      totalPages: Math.ceil(totalTasks / limit),
+    };
   } catch (error) {
     throw error;
   }
@@ -244,6 +259,28 @@ app.get("/tasks", authenticateToken, async (req, res) => {
     const tasks = await readAllTasks(filters);
 
     res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error fetching tasks", error);
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
+});
+
+app.get("/tasks", authenticateToken, async (req, res) => {
+  try {
+    const filters = {
+      team: req.query.team,
+      owner: req.query.owner,
+      project: req.query.project,
+      status: req.query.status,
+      tags: req.query.tags,
+    };
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 9;
+
+    const result = await readAllTasks(filters, page, limit);
+
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching tasks", error);
     res.status(500).json({ error: "Failed to fetch tasks" });
