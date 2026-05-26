@@ -214,26 +214,65 @@ const readAllTasks = async (filters = {}, page = 1, limit = 9) => {
   try {
     const query = {};
 
-    if (filters.team) query.team = filters.team;
-    if (filters.owner) query.owners = { $in: filters.owner.split(",") };
-    if (filters.project) query.project = filters.project;
-    if (filters.status) query.status = filters.status;
-    if (filters.tags) query.tags = { $in: filters.tags.split(",") };
+    if (filters.team) {
+      query.team = filters.team;
+    }
+
+    if (filters.owner) {
+      query.owners = { $in: filters.owner.split(",") };
+    }
+
+    if (filters.project) {
+      query.project = filters.project;
+    }
+
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    if (filters.tags) {
+      query.tags = { $in: filters.tags.split(",") };
+    }
+
+    page = Number(page) || 1;
+    limit = Number(limit) || 9;
 
     const skip = (page - 1) * limit;
 
+    console.log("Pagination Debug:", {
+      page,
+      limit,
+      skip,
+      query,
+    });
+
     const [tasks, totalTasks] = await Promise.all([
       Task.find(query)
+        .sort({ createdAt: -1, _id: -1 }) // IMPORTANT
         .populate([
-          { path: "project", select: "name description" },
-          { path: "team", select: "name description" },
-          { path: "owners", select: "name email" },
+          {
+            path: "project",
+            select: "name description",
+          },
+          {
+            path: "team",
+            select: "name description",
+          },
+          {
+            path: "owners",
+            select: "name email",
+          },
         ])
         .skip(skip)
         .limit(limit),
 
       Task.countDocuments(query),
     ]);
+
+    console.log(
+      "Returned Task IDs:",
+      tasks.map((task) => task._id.toString()),
+    );
 
     return {
       tasks,
@@ -246,44 +285,29 @@ const readAllTasks = async (filters = {}, page = 1, limit = 9) => {
   }
 };
 
+// Single /tasks GET route with full pagination + filtering support
 app.get("/tasks", authenticateToken, async (req, res) => {
   try {
     const filters = {
-      team: req.query.team,
-      owner: req.query.owner,
-      project: req.query.project,
-      status: req.query.status,
-      tags: req.query.tags,
+      team: req.query.team || "",
+      owner: req.query.owner || "",
+      project: req.query.project || "",
+      status: req.query.status || "",
+      tags: req.query.tags || "",
     };
 
-    const tasks = await readAllTasks(filters);
-
-    res.status(200).json(tasks);
-  } catch (error) {
-    console.error("Error fetching tasks", error);
-    res.status(500).json({ error: "Failed to fetch tasks" });
-  }
-});
-
-app.get("/tasks", authenticateToken, async (req, res) => {
-  try {
-    const filters = {
-      team: req.query.team,
-      owner: req.query.owner,
-      project: req.query.project,
-      status: req.query.status,
-      tags: req.query.tags,
-    };
-
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 9;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Number(req.query.limit) || 9);
 
     const result = await readAllTasks(filters, page, limit);
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching tasks", error);
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    console.error("Error fetching tasks:", error);
+
+    res.status(500).json({
+      error: "Failed to fetch tasks",
+    });
   }
 });
 
@@ -332,6 +356,7 @@ app.get("/tasks/:id", authenticateToken, async (req, res) => {
     });
   }
 });
+
 const updateTask = async (taskId, updatedData) => {
   try {
     const taskUpdate = await Task.findByIdAndUpdate(taskId, updatedData, {
