@@ -296,8 +296,8 @@ app.get("/tasks", authenticateToken, async (req, res) => {
       tags: req.query.tags || "",
     };
 
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.max(1, Number(req.query.limit) || 9);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 9;
 
     const result = await readAllTasks(filters, page, limit);
 
