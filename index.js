@@ -562,7 +562,15 @@ const readCompletedTasksLastWeek = async () => {
       updatedAt: { $gte: sevenDayAgo },
     });
 
-    return tasks;
+    const grouped = {};
+
+    tasks.forEach((task) => {
+      const date = task.updatedAt.toISOString().split("T")[0];
+
+      grouped[date] = (grouped[date] || 0) + 1;
+    });
+
+    return grouped;
   } catch (error) {
     throw error;
   }
