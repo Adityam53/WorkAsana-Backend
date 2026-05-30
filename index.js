@@ -578,11 +578,22 @@ const readCompletedTasksLastWeek = async () => {
 
 app.get("/report/last-week", authenticateToken, async (req, res) => {
   try {
-    const tasks = await readCompletedTasksLastWeek();
-    res.status(200).json({ count: tasks.length, tasks });
+    const dailyBreakdown = await readCompletedTasksLastWeek();
+
+    const count = Object.values(dailyBreakdown).reduce(
+      (total, current) => total + current,
+      0,
+    );
+
+    res.status(200).json({
+      count,
+      dailyBreakdown,
+    });
   } catch (error) {
     console.error("Error generating last week report", error);
-    res.status(500).json({ error: "Failed to generate report." });
+    res.status(500).json({
+      error: "Failed to generate report.",
+    });
   }
 });
 
