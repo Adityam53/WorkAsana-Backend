@@ -9,7 +9,7 @@ Built using Node.js, Express.js, MongoDB, Mongoose, and JWT Authentication.
 ## Quick Start
 
 ```bash
-git clone <https://github.com/Adityam53/WorkAsana-Backend.git>
+git clone https://github.com/Adityam53/WorkAsana-Backend.git
 open integrated terminal
 npm install
 npm run dev
