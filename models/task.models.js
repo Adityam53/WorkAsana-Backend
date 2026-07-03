@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const taskSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
@@ -21,7 +21,11 @@ const taskSchema = new mongoose.Schema(
       },
     ],
     tags: [{ type: String }],
-    timeToComplete: { type: Number, required: true },
+    timeToComplete: {
+      type: Number,
+      required: true,
+      min: [1, "Time to complete must be at least 1"],
+    },
     status: {
       type: String,
       enum: ["To Do", "In Progress", "Completed", "Blocked"],

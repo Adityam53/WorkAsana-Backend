@@ -361,6 +361,7 @@ const updateTask = async (taskId, updatedData) => {
   try {
     const taskUpdate = await Task.findByIdAndUpdate(taskId, updatedData, {
       new: true,
+      runValidators: true,
     });
     return taskUpdate;
   } catch (error) {
