@@ -13,13 +13,21 @@ const taskSchema = new mongoose.Schema(
       ref: "Team",
       required: true,
     },
-    owners: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
+    owners: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
+      required: true,
+      validate: {
+        validator: function (owners) {
+          return owners.length > 0;
+        },
+        message: "At least one owner is required.",
       },
-    ],
+    },
     tags: [{ type: String }],
     timeToComplete: {
       type: Number,
