@@ -436,8 +436,17 @@ app.post("/teams", authenticateToken, async (req, res) => {
 
     res.status(201).json(savedTeam);
   } catch (error) {
-    console.error("Error in creating new Team.");
-    res.status(500).json({ error: "Internal server error" });
+    console.error(error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "Team name already exists.",
+      });
+    }
+
+    res.status(500).json({
+      error: "Internal Server Error",
+    });
   }
 });
 
@@ -483,8 +492,17 @@ app.post("/projects", authenticateToken, async (req, res) => {
       .status(201)
       .json({ message: "Project created successfully.", savedProject });
   } catch (error) {
-    console.error("Error in creating project.");
-    res.status(500).json({ error: "Internal Server Error." });
+    console.error(error);
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "Project name already exists.",
+      });
+    }
+
+    res.status(500).json({
+      error: "Internal Server Error",
+    });
   }
 });
 
